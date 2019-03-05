@@ -15,12 +15,36 @@ class ImageDataset(Dataset):
         self.files_B = sorted(glob.glob(os.path.join(root, '%s/B' % mode) + '/*.*'))
 
     def __getitem__(self, index):
-        item_A = self.transform(Image.open(self.files_A[index % len(self.files_A)]))
+        A_correct = False
+        B_correct = False
+
+        A_name = self.files_A[index % len(self.files_A)]
+        img_A = Image.open(A_name)
+        try:
+            item_A = self.transform(img_A)
+            A_correct = True
+        except:
+            print("Wrong transform A: ", A_name)
 
         if self.unaligned:
-            item_B = self.transform(Image.open(self.files_B[random.randint(0, len(self.files_B) - 1)]))
+            B_name = self.files_B[random.randint(0, len(self.files_B) - 1)]
+            img_B = Image.open(B_name)
+            try:
+                item_B = self.transform(img_B)
+                B_correct = True
+            except:
+                print("Wrong transform B: ", B_name)
         else:
-            item_B = self.transform(Image.open(self.files_B[index % len(self.files_B)]))
+            B_name = self.files_B[index % len(self.files_B)]
+            img_B = Image.open(B_name)
+            try:
+                item_B = self.transform(img_B)
+                B_correct = True
+            except:
+                print("Wrong transform B: ", B_name)
+
+        if not A_correct or not B_correct: # if data encounter error
+            return []
 
         return {'A': item_A, 'B': item_B}
 

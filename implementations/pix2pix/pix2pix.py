@@ -82,10 +82,10 @@ transforms_ = [ transforms.Resize((opt.img_height, opt.img_width), Image.BICUBIC
                 transforms.ToTensor(),
                 transforms.Normalize((0.5,0.5,0.5), (0.5,0.5,0.5)) ]
 
-dataloader = DataLoader(ImageDataset("../../data/%s" % opt.dataset_name, transforms_=transforms_),
+dataloader = DataLoader(ImageDataset("/media/arg_ws3/5E703E3A703E18EB/data/MM_sem", transforms_=transforms_),
                         batch_size=opt.batch_size, shuffle=True, num_workers=opt.n_cpu)
 
-val_dataloader = DataLoader(ImageDataset("../../data/%s" % opt.dataset_name, transforms_=transforms_, mode='val'),
+val_dataloader = DataLoader(ImageDataset("/media/arg_ws3/5E703E3A703E18EB/data/MM_sem", transforms_=transforms_, mode='val'),
                             batch_size=10, shuffle=True, num_workers=1)
 
 # Tensor type

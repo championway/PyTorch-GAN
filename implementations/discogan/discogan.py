@@ -25,13 +25,13 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--epoch', type=int, default=0, help='epoch to start training from')
 parser.add_argument('--n_epochs', type=int, default=200, help='number of epochs of training')
 parser.add_argument('--dataset_name', type=str, default="edges2shoes", help='name of the dataset')
-parser.add_argument('--batch_size', type=int, default=64, help='size of the batches')
+parser.add_argument('--batch_size', type=int, default=16, help='size of the batches')
 parser.add_argument('--lr', type=float, default=0.0002, help='adam: learning rate')
 parser.add_argument('--b1', type=float, default=0.5, help='adam: decay of first order momentum of gradient')
 parser.add_argument('--b2', type=float, default=0.999, help='adam: decay of first order momentum of gradient')
 parser.add_argument('--n_cpu', type=int, default=8, help='number of cpu threads to use during batch generation')
-parser.add_argument('--img_height', type=int, default=64, help='size of image height')
-parser.add_argument('--img_width', type=int, default=64, help='size of image width')
+parser.add_argument('--img_height', type=int, default=320, help='size of image height')
+parser.add_argument('--img_width', type=int, default=320, help='size of image width')
 parser.add_argument('--channels', type=int, default=3, help='number of image channels')
 parser.add_argument('--sample_interval', type=int, default=100, help='interval between sampling of images from generators')
 parser.add_argument('--checkpoint_interval', type=int, default=-1, help='interval between model checkpoints')
@@ -101,9 +101,9 @@ Tensor = torch.cuda.FloatTensor if cuda else torch.Tensor
 transforms_ = [ transforms.Resize((opt.img_height, opt.img_width), Image.BICUBIC),
                 transforms.ToTensor(),
                 transforms.Normalize((0.5,0.5,0.5), (0.5,0.5,0.5)) ]
-dataloader = DataLoader(ImageDataset("../../data/%s" % opt.dataset_name, transforms_=transforms_, mode='train'),
+dataloader = DataLoader(ImageDataset("/media/arg_ws3/5E703E3A703E18EB/data/MM_sem", transforms_=transforms_, mode='train'),
                             batch_size=opt.batch_size, shuffle=True, num_workers=opt.n_cpu)
-val_dataloader = DataLoader(ImageDataset("../../data/%s" % opt.dataset_name, transforms_=transforms_, mode='val'),
+val_dataloader = DataLoader(ImageDataset("/media/arg_ws3/5E703E3A703E18EB/data/MM_sem", transforms_=transforms_, mode='val'),
                             batch_size=16, shuffle=True, num_workers=opt.n_cpu)
 
 def sample_images(batches_done):
@@ -217,9 +217,16 @@ for epoch in range(opt.epoch, opt.n_epochs):
         # If at sample interval save image
         if batches_done % opt.sample_interval == 0:
             sample_images(batches_done)
+        '''if batches_done !=0 and batches_done % 500 == 0:
+            # Save model checkpoints
+            torch.save(G_AB.state_dict(), 'saved_models/%s/G_AB_%d.pth' % (opt.dataset_name, batches_done))
+            torch.save(G_BA.state_dict(), 'saved_models/%s/G_BA_%d.pth' % (opt.dataset_name, batches_done))
+            torch.save(D_A.state_dict(), 'saved_models/%s/D_A_%d.pth' % (opt.dataset_name, batches_done))
+            torch.save(D_B.state_dict(), 'saved_models/%s/D_B_%d.pth' % (opt.dataset_name, batches_done))'''
 
 
-    if opt.checkpoint_interval != -1 and epoch % opt.checkpoint_interval == 0:
+    #if opt.checkpoint_interval != -1 and epoch % opt.checkpoint_interval == 0:
+    if True:
         # Save model checkpoints
         torch.save(G_AB.state_dict(), 'saved_models/%s/G_AB_%d.pth' % (opt.dataset_name, epoch))
         torch.save(G_BA.state_dict(), 'saved_models/%s/G_BA_%d.pth' % (opt.dataset_name, epoch))
