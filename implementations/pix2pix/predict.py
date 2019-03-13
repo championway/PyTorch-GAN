@@ -59,9 +59,9 @@ Tensor = torch.cuda.FloatTensor if cuda else torch.FloatTensor
 def sample_images():
     """Saves a generated sample from the validation set"""
     prev_time = time.time()
-    image = cv2.imread("out1.png",-1)
+    image = cv2.imread("/media/arg_ws3/5E703E3A703E18EB/data/subt_real/depth/extinguisher/scene000004/14.png",-1)
     #image = np.transpose(image, (1, 0))
-    print(image.shape)
+    #print(image.shape)
     #image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     image = image/1000.
     #image = np.asarray(image, dtype=np.uint16)
@@ -74,14 +74,28 @@ def sample_images():
     my_img = Variable(pil_im.type(Tensor))
     my_img_fake = generator(my_img)
     my_img_fake = my_img_fake.squeeze(0).detach().cpu()
-    print(my_img_fake.shape)
-    pil_ = my_img_fake.mul(255).byte()
-    pil_ = np.asarray(pil_, dtype=np.uint8)
+
+    inv_normalize = transforms.Compose([ 
+                        transforms.Normalize(mean = [ 0., 0., 0. ],
+                                             std = [ 1/0.5, 1/0.5, 1/0.5 ]),
+                        transforms.Normalize(mean = [ -0.5, -0.5, -0.5 ],
+                                             std = [ 1., 1., 1. ]),
+                        ])
+    pil_ = inv_normalize(my_img_fake)
+    pil_ = pil_.mul(255).clamp(0, 255).byte().permute(1, 2, 0)
+    #pil_ = transforms.ToPILImage()(my_img_fake)
+    pil_ = np.array(pil_)
+    #pil_ = np.transpose(pil_, (0, 2, 1))
+    #print("===",pil_.shape)
+    #pil_ = np.asarray(pil_, dtype=np.uint8)
+    #pil_ = pil_[::-1,...]
+    pil_ = pil_[...,::-1]
     #pil_ = cv2.cvtColor(pil_, cv2.COLOR_RGB2BGR)
     #pil_ = np.array(pil_)
-    pil_ = np.transpose(pil_, (1, 2, 0))
-    print(pil_)
-    print(pil_.shape)
+    #pil_ = np.transpose(pil_, (1, 2, 0))
+    #print(pil_)
+    #print(pil_.shape)
+    pil_ = cv2.resize(pil_, (640, 480))
     cv2.imwrite("ss.jpg", pil_)
 
     save_image(my_img_fake, 'sss.jpg', normalize=True)

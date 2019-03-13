@@ -23,7 +23,7 @@ import torch
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--epoch', type=int, default=0, help='epoch to start training from')
-parser.add_argument('--n_epochs', type=int, default=200, help='number of epochs of training')
+parser.add_argument('--n_epochs', type=int, default=2000, help='number of epochs of training')
 parser.add_argument('--dataset_name', type=str, default="facades", help='name of the dataset')
 parser.add_argument('--batch_size', type=int, default=1, help='size of the batches')
 parser.add_argument('--lr', type=float, default=0.0002, help='adam: learning rate')
@@ -34,8 +34,8 @@ parser.add_argument('--n_cpu', type=int, default=8, help='number of cpu threads 
 parser.add_argument('--img_height', type=int, default=256, help='size of image height')
 parser.add_argument('--img_width', type=int, default=256, help='size of image width')
 parser.add_argument('--channels', type=int, default=3, help='number of image channels')
-parser.add_argument('--sample_interval', type=int, default=500, help='interval between sampling of images from generators')
-parser.add_argument('--checkpoint_interval', type=int, default=10, help='interval between model checkpoints')
+parser.add_argument('--sample_interval', type=int, default=5000, help='interval between sampling of images from generators')
+parser.add_argument('--checkpoint_interval', type=int, default=100, help='interval between model checkpoints')
 opt = parser.parse_args()
 print(opt)
 
@@ -186,3 +186,5 @@ for epoch in range(opt.epoch, opt.n_epochs):
         # Save model checkpoints
         torch.save(generator.state_dict(), 'saved_models/%s/generator_%d.pth' % (opt.dataset_name, epoch))
         torch.save(discriminator.state_dict(), 'saved_models/%s/discriminator_%d.pth' % (opt.dataset_name, epoch))
+torch.save(generator.state_dict(), 'saved_models/%s/generator.pth' % (opt.dataset_name))
+torch.save(discriminator.state_dict(), 'saved_models/%s/discriminator.pth' % (opt.dataset_name))
