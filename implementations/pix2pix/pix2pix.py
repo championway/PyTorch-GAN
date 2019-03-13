@@ -35,7 +35,7 @@ parser.add_argument('--img_height', type=int, default=256, help='size of image h
 parser.add_argument('--img_width', type=int, default=256, help='size of image width')
 parser.add_argument('--channels', type=int, default=3, help='number of image channels')
 parser.add_argument('--sample_interval', type=int, default=500, help='interval between sampling of images from generators')
-parser.add_argument('--checkpoint_interval', type=int, default=-1, help='interval between model checkpoints')
+parser.add_argument('--checkpoint_interval', type=int, default=10, help='interval between model checkpoints')
 opt = parser.parse_args()
 print(opt)
 
@@ -78,14 +78,16 @@ optimizer_G = torch.optim.Adam(generator.parameters(), lr=opt.lr, betas=(opt.b1,
 optimizer_D = torch.optim.Adam(discriminator.parameters(), lr=opt.lr, betas=(opt.b1, opt.b2))
 
 # Configure dataloaders
-transforms_ = [ transforms.Resize((opt.img_height, opt.img_width), Image.BICUBIC),
+transforms_A = [ transforms.Resize((opt.img_height, opt.img_width), Image.BICUBIC),
                 transforms.ToTensor(),
                 transforms.Normalize((0.5,0.5,0.5), (0.5,0.5,0.5)) ]
+transforms_B = [ transforms.Resize((opt.img_height, opt.img_width), Image.BICUBIC),
+                transforms.ToTensor() ]
 
-dataloader = DataLoader(ImageDataset("/media/arg_ws3/5E703E3A703E18EB/data/MM_sem", transforms_=transforms_),
+dataloader = DataLoader(ImageDataset("/media/arg_ws3/5E703E3A703E18EB/data/subt_real/", transforms_A=transforms_A, transforms_B=transforms_B),
                         batch_size=opt.batch_size, shuffle=True, num_workers=opt.n_cpu)
 
-val_dataloader = DataLoader(ImageDataset("/media/arg_ws3/5E703E3A703E18EB/data/MM_sem", transforms_=transforms_, mode='val'),
+val_dataloader = DataLoader(ImageDataset("/media/arg_ws3/5E703E3A703E18EB/data/subt_real/", transforms_A=transforms_A, transforms_B=transforms_B, mode='val'),
                             batch_size=10, shuffle=True, num_workers=1)
 
 # Tensor type

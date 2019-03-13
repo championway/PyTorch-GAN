@@ -112,10 +112,10 @@ Tensor = torch.cuda.FloatTensor if cuda else torch.FloatTensor
 
 for epoch in range(opt.n_epochs):
     for i, (imgs, _) in enumerate(dataloader):
-
+        print(imgs.shape)
         # Adversarial ground truths
-        valid = Variable(Tensor(imgs.size(0), 1).fill_(1.0), requires_grad=False)
-        fake = Variable(Tensor(imgs.size(0), 1).fill_(0.0), requires_grad=False)
+        valid = Variable(Tensor(imgs.size(0), 1).fill_(1.0), requires_grad=False) # ([batch_size, 1]) filled with 1.
+        fake = Variable(Tensor(imgs.size(0), 1).fill_(0.0), requires_grad=False) # ([batch_size, 1]) fiiled with 0.
 
         # Configure input
         real_imgs = Variable(imgs.type(Tensor))
@@ -127,7 +127,7 @@ for epoch in range(opt.n_epochs):
         optimizer_G.zero_grad()
 
         # Sample noise as generator input
-        z = Variable(Tensor(np.random.normal(0, 1, (imgs.shape[0], opt.latent_dim))))
+        z = Variable(Tensor(np.random.normal(0, 1, (imgs.shape[0], opt.latent_dim)))) # ([batch_size, latent_dim])
 
         # Generate a batch of images
         gen_imgs = generator(z)
