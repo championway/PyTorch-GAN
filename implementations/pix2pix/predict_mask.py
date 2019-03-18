@@ -59,7 +59,7 @@ Tensor = torch.cuda.FloatTensor if cuda else torch.FloatTensor
 def sample_images():
     """Saves a generated sample from the validation set"""
     prev_time = time.time()
-    image = cv2.imread("/media/arg_ws3/5E703E3A703E18EB/data/subt_real/depth/extinguisher/scene000006/5.png",cv2.IMREAD_ANYDEPTH)
+    image = cv2.imread("/media/arg_ws3/5E703E3A703E18EB/data/subt_real_ssd/depth/extinguisher/scene000053/6.png",cv2.IMREAD_ANYDEPTH)
     
     image = np.array(image)/1000.
     print(image.dtype)
@@ -76,10 +76,10 @@ def sample_images():
     pil_ = np.array(pil_)
     pil_ = pil_[...,::-1]
     pil_ = cv2.resize(pil_, (640, 480))
-    for i in range(640):
+    '''for i in range(640):
         for j in range(480):
             if pil_[j][i]!=0 and pil_[j][i]>5:
-                print(pil_[j][i])
+                print(pil_[j][i])'''
     print(pil_.dtype)
     #print(pil_)
     cv2.imwrite("mask_cv.jpg", pil_)

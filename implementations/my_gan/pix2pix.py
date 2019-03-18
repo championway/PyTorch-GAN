@@ -14,8 +14,8 @@ from torch.utils.data import DataLoader
 from torchvision import datasets
 from torch.autograd import Variable
 
-from models import *
-from bbx_mask_datasets import *
+from models_gan import *
+from datasets import *
 
 import torch.nn as nn
 import torch.nn.functional as F
@@ -23,8 +23,8 @@ import torch
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--epoch', type=int, default=0, help='epoch to start training from')
-parser.add_argument('--n_epochs', type=int, default=100, help='number of epochs of training')
-parser.add_argument('--dataset_name', type=str, default="bbx_mask", help='name of the dataset')
+parser.add_argument('--n_epochs', type=int, default=2000, help='number of epochs of training')
+parser.add_argument('--dataset_name', type=str, default="facades", help='name of the dataset')
 parser.add_argument('--batch_size', type=int, default=1, help='size of the batches')
 parser.add_argument('--lr', type=float, default=0.0002, help='adam: learning rate')
 parser.add_argument('--b1', type=float, default=0.5, help='adam: decay of first order momentum of gradient')
@@ -33,9 +33,9 @@ parser.add_argument('--decay_epoch', type=int, default=100, help='epoch from whi
 parser.add_argument('--n_cpu', type=int, default=8, help='number of cpu threads to use during batch generation')
 parser.add_argument('--img_height', type=int, default=256, help='size of image height')
 parser.add_argument('--img_width', type=int, default=256, help='size of image width')
-parser.add_argument('--channels', type=int, default=1, help='number of image channels')
-parser.add_argument('--sample_interval', type=int, default=1000, help='interval between sampling of images from generators')
-parser.add_argument('--checkpoint_interval', type=int, default=10, help='interval between model checkpoints')
+parser.add_argument('--channels', type=int, default=3, help='number of image channels')
+parser.add_argument('--sample_interval', type=int, default=5000, help='interval between sampling of images from generators')
+parser.add_argument('--checkpoint_interval', type=int, default=100, help='interval between model checkpoints')
 opt = parser.parse_args()
 print(opt)
 
@@ -55,8 +55,8 @@ lambda_pixel = 100
 patch = (1, opt.img_height//2**4, opt.img_width//2**4)
 
 # Initialize generator and discriminator
-generator = GeneratorUNet(in_channels=opt.channels, out_channels=opt.channels)
-discriminator = Discriminator(in_channels=opt.channels)
+generator = GeneratorUNet()
+discriminator = Discriminator()
 
 if cuda:
     generator = generator.cuda()
@@ -84,10 +84,10 @@ transforms_A = [ transforms.Resize((opt.img_height, opt.img_width), Image.BICUBI
 transforms_B = [ transforms.Resize((opt.img_height, opt.img_width), Image.BICUBIC),
                 transforms.ToTensor() ]
 
-dataloader = DataLoader(ImageDataset("/media/arg_ws3/5E703E3A703E18EB/data/subt_real/", transforms_A=transforms_B, transforms_B=transforms_B),
+dataloader = DataLoader(ImageDataset("/media/arg_ws3/5E703E3A703E18EB/data/subt_real/", transforms_A=transforms_A, transforms_B=transforms_B),
                         batch_size=opt.batch_size, shuffle=True, num_workers=opt.n_cpu)
 
-val_dataloader = DataLoader(ImageDataset("/media/arg_ws3/5E703E3A703E18EB/data/subt_real/", transforms_A=transforms_B, transforms_B=transforms_B, mode='val'),
+val_dataloader = DataLoader(ImageDataset("/media/arg_ws3/5E703E3A703E18EB/data/subt_real/", transforms_A=transforms_A, transforms_B=transforms_B, mode='val'),
                             batch_size=10, shuffle=True, num_workers=1)
 
 # Tensor type
@@ -100,7 +100,7 @@ def sample_images(batches_done):
     real_B = Variable(imgs['A'].type(Tensor))
     fake_B = generator(real_A)
     img_sample = torch.cat((real_A.data, fake_B.data, real_B.data), -2)
-    save_image(img_sample, 'images/%s/%s.png' % (opt.dataset_name, batches_done), nrow=5, normalize=False)
+    save_image(img_sample, 'images/%s/%s.png' % (opt.dataset_name, batches_done), nrow=5, normalize=True)
 
 # ----------
 #  Training
