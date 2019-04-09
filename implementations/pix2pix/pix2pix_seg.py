@@ -23,8 +23,8 @@ import torch
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--epoch', type=int, default=0, help='epoch to start training from')
-parser.add_argument('--n_epochs', type=int, default=100, help='number of epochs of training')
-parser.add_argument('--dataset_name', type=str, default="seg_cnt2mask", help='name of the dataset')
+parser.add_argument('--n_epochs', type=int, default=200, help='number of epochs of training')
+parser.add_argument('--dataset_name', type=str, default="pix2pix_seg_cnt2mask_no_pix_cos", help='name of the dataset')
 parser.add_argument('--batch_size', type=int, default=1, help='size of the batches')
 parser.add_argument('--lr', type=float, default=0.0002, help='adam: learning rate')
 parser.add_argument('--b1', type=float, default=0.5, help='adam: decay of first order momentum of gradient')
@@ -34,7 +34,7 @@ parser.add_argument('--n_cpu', type=int, default=8, help='number of cpu threads 
 parser.add_argument('--img_height', type=int, default=256, help='size of image height')
 parser.add_argument('--img_width', type=int, default=256, help='size of image width')
 parser.add_argument('--channels', type=int, default=1, help='number of image channels')
-parser.add_argument('--sample_interval', type=int, default=500, help='interval between sampling of images from generators')
+parser.add_argument('--sample_interval', type=int, default=100, help='interval between sampling of images from generators')
 parser.add_argument('--checkpoint_interval', type=int, default=10, help='interval between model checkpoints')
 opt = parser.parse_args()
 print(opt)
@@ -130,10 +130,32 @@ for epoch in range(opt.epoch, opt.n_epochs):
         pred_fake = discriminator(fake_B, real_A)
         loss_GAN = criterion_GAN(pred_fake, valid)
         # Pixel-wise loss
-        loss_pixel = criterion_pixelwise(fake_B, real_B)
+        #loss_pixel = criterion_pixelwise(fake_B, real_B)
+
+        fake_B_diff = []
+        real_A_diff = []
+        for n in range(1,255, 3):
+            for m in range(1,255, 3):
+                for c in range(3):
+                    diff_f = 0
+                    diff_r = 0
+                    if fake_B[0][c][m+1][n+0] != fake_B[0][c][m][n]:
+                        diff_f = diff_f + 1
+                    if fake_B[0][c][m+0][n+1] != fake_B[0][c][m][n]:
+                        diff_f = diff_f + 1
+                    if fake_B[0][c][m-1][n+0] != fake_B[0][c][m][n]:
+                        diff_f = diff_f + 1
+                    if fake_B[0][c][m+0][n-1] != fake_B[0][c][m][n]:
+                        diff_f = diff_f + 1
+                    fake_B_diff.append(diff_f)
+                    real_A_diff.append(diff_r)
+        fake_B_diff = torch.FloatTensor(fake_B_diff)
+        real_A_diff = torch.FloatTensor(real_A_diff)
+        loss_pixel = criterion_pixelwise(fake_B_diff, real_A_diff)
 
         # Total loss
         loss_G = loss_GAN + lambda_pixel * loss_pixel
+        #loss_G = loss_GAN
 
         loss_G.backward()
 
