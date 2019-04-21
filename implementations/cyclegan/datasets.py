@@ -6,47 +6,38 @@ from torch.utils.data import Dataset
 from PIL import Image
 import torchvision.transforms as transforms
 
+
+def to_rgb(image):
+    rgb_image = Image.new("RGB", image.size)
+    rgb_image.paste(image)
+    return rgb_image
+
+
 class ImageDataset(Dataset):
-    def __init__(self, root, transforms_=None, unaligned=False, mode='train'):
+    def __init__(self, root, transforms_=None, unaligned=False, mode="train"):
         self.transform = transforms.Compose(transforms_)
         self.unaligned = unaligned
 
-        self.files_A = sorted(glob.glob(os.path.join(root, '%s/A' % mode) + '/*.*'))
-        self.files_B = sorted(glob.glob(os.path.join(root, '%s/B' % mode) + '/*.*'))
+        self.files_A = sorted(glob.glob(os.path.join(root, "%s/A" % mode) + "/*.*"))
+        self.files_B = sorted(glob.glob(os.path.join(root, "%s/B" % mode) + "/*.*"))
 
     def __getitem__(self, index):
-        A_correct = False
-        B_correct = False
-
-        A_name = self.files_A[index % len(self.files_A)]
-        img_A = Image.open(A_name)
-        try:
-            item_A = self.transform(img_A)
-            A_correct = True
-        except:
-            print("Wrong transform A: ", A_name)
+        image_A = Image.open(self.files_A[index % len(self.files_A)])
 
         if self.unaligned:
-            B_name = self.files_B[random.randint(0, len(self.files_B) - 1)]
-            img_B = Image.open(B_name)
-            try:
-                item_B = self.transform(img_B)
-                B_correct = True
-            except:
-                print("Wrong transform B: ", B_name)
+            image_B = Image.open(self.files_B[random.randint(0, len(self.files_B) - 1)])
         else:
-            B_name = self.files_B[index % len(self.files_B)]
-            img_B = Image.open(B_name)
-            try:
-                item_B = self.transform(img_B)
-                B_correct = True
-            except:
-                print("Wrong transform B: ", B_name)
+            image_B = Image.open(self.files_B[index % len(self.files_B)])
 
-        if not A_correct or not B_correct: # if data encounter error
-            return []
+        # Convert grayscale images to rgb
+        if image_A.mode != "RGB":
+            image_A = to_rgb(image_A)
+        if image_B.mode != "RGB":
+            image_B = to_rgb(image_B)
 
-        return {'A': item_A, 'B': item_B}
+        item_A = self.transform(image_A)
+        item_B = self.transform(image_B)
+        return {"A": item_A, "B": item_B}
 
     def __len__(self):
         return max(len(self.files_A), len(self.files_B))
