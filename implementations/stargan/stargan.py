@@ -50,8 +50,8 @@ parser.add_argument('--n_cpu', type=int, default=8, help='number of cpu threads 
 parser.add_argument('--img_height', type=int, default=128, help='size of image height')
 parser.add_argument('--img_width', type=int, default=128, help='size of image width')
 parser.add_argument('--channels', type=int, default=3, help='number of image channels')
-parser.add_argument('--sample_interval', type=int, default=400, help='interval between sampling of images from generators')
-parser.add_argument('--checkpoint_interval', type=int, default=-1, help='interval between model checkpoints')
+parser.add_argument('--sample_interval', type=int, default=200, help='interval between sampling of images from generators')
+parser.add_argument('--checkpoint_interval', type=int, default=2000, help='interval between model checkpoints')
 parser.add_argument('--residual_blocks', type=int, default=6, help='number of residual blocks in generator')
 parser.add_argument('--selected_attrs', '--list', nargs='+', help='selected attributes for the CelebA dataset',
                         default=['Black_Hair', 'Blond_Hair', 'Brown_Hair', 'Male', 'Young'])
@@ -255,7 +255,7 @@ for epoch in range(opt.epoch, opt.n_epochs):
                 sample_images(batches_done)
 
 
-    if opt.checkpoint_interval != -1 and epoch % opt.checkpoint_interval == 0:
-        # Save model checkpoints
-        torch.save(generator.state_dict(), 'saved_models/generator_%d.pth' % epoch)
-        torch.save(discriminator.state_dict(), 'saved_models/discriminator_%d.pth' % epoch)
+            if batches_done % opt.checkpoint_interval == 0:
+                # Save model checkpoints
+                torch.save(generator.state_dict(), 'saved_models/generator_%d.pth' % epoch)
+                torch.save(discriminator.state_dict(), 'saved_models/discriminator_%d.pth' % epoch)
