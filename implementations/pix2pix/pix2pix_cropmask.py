@@ -15,7 +15,7 @@ from torchvision import datasets
 from torch.autograd import Variable
 
 from models import *
-from datasets_seg import *
+from datasets_cropmask import *
 
 import torch.nn as nn
 import torch.nn.functional as F
@@ -23,8 +23,8 @@ import torch
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--epoch', type=int, default=0, help='epoch to start training from')
-parser.add_argument('--n_epochs', type=int, default=500, help='number of epochs of training')
-parser.add_argument('--dataset_name', type=str, default="pix2pix_seg_dep_depth_norm", help='name of the dataset')
+parser.add_argument('--n_epochs', type=int, default=200, help='number of epochs of training')
+parser.add_argument('--dataset_name', type=str, default="depth_rgb", help='name of the dataset')
 parser.add_argument('--batch_size', type=int, default=1, help='size of the batches')
 parser.add_argument('--lr', type=float, default=0.0002, help='adam: learning rate')
 parser.add_argument('--b1', type=float, default=0.5, help='adam: decay of first order momentum of gradient')
@@ -38,7 +38,7 @@ parser.add_argument('--sample_interval', type=int, default=1000, help='interval 
 parser.add_argument('--checkpoint_interval', type=int, default=10, help='interval between model checkpoints')
 opt = parser.parse_args()
 print(opt)
-root = '/media/arg_ws3/5E703E3A703E18EB/research/pix2pix_seg/'
+root = '/media/arg_ws3/5E703E3A703E18EB/research/pix2pix_cropmask/'
 os.makedirs(root + 'images/%s' % opt.dataset_name, exist_ok=True)
 os.makedirs(root + 'saved_models/%s' % opt.dataset_name, exist_ok=True)
 
@@ -55,8 +55,8 @@ lambda_pixel = 100
 patch = (1, opt.img_height//2**4, opt.img_width//2**4)
 
 # Initialize generator and discriminator
-generator = GeneratorUNet(in_channels=1, out_channels=1)
-discriminator = Discriminator(in_channels=2)
+generator = GeneratorUNet(in_channels=4, out_channels=1)
+discriminator = Discriminator(in_channels=5)
 
 if cuda:
     generator = generator.cuda()
@@ -88,10 +88,10 @@ transforms_B = [ #transforms.Resize((opt.img_height, opt.img_width), Image.BICUB
                 transforms.ToTensor() 
                 ]
 
-dataloader = DataLoader(ImageDataset("/media/arg_ws3/5E703E3A703E18EB/data/unity_obj/", transforms_A=transforms_B, transforms_B=transforms_B),
+dataloader = DataLoader(ImageDataset("/media/arg_ws3/5E703E3A703E18EB/data/subt_all/", transforms_A=transforms_B, transforms_B=transforms_B),
                         batch_size=opt.batch_size, shuffle=True, num_workers=opt.n_cpu)
 
-val_dataloader = DataLoader(ImageDataset("/media/arg_ws3/5E703E3A703E18EB/data/unity_obj/", transforms_A=transforms_B, transforms_B=transforms_B, mode='test'),
+val_dataloader = DataLoader(ImageDataset("/media/arg_ws3/5E703E3A703E18EB/data/subt_all/", transforms_A=transforms_B, transforms_B=transforms_B, mode='val'),
                             batch_size=10, shuffle=True, num_workers=1)
 
 # Tensor type
@@ -100,13 +100,13 @@ Tensor = torch.cuda.FloatTensor if cuda else torch.FloatTensor
 def sample_images(batches_done):
     """Saves a generated sample from the validation set"""
     imgs = next(iter(val_dataloader))
-    real_D = Variable(imgs['B'].type(Tensor))
-    real_B = Variable(imgs['A'].type(Tensor))
-    real_C = Variable(imgs['C'].type(Tensor))
-    # real_A = torch.cat((real_D, real_C), 1)
-    real_A = real_D
+    real_D = Variable(imgs['B'].type(Tensor)) # depth
+    real_B = Variable(imgs['A'].type(Tensor)) # mask
+    real_C = Variable(imgs['C'].type(Tensor)) # rgb
+    real_A = torch.cat((real_D, real_C), 1)
+    # real_A = real_D
     fake_B = generator(real_A)
-    img_sample = torch.cat((real_A[:,0,:,:].unsqueeze(1).data, fake_B.data, real_B.data), -2)
+    img_sample = torch.cat((real_C[:,0,:,:].unsqueeze(1).data, fake_B.data, real_B.data), -2)
     save_image(img_sample, root + 'images/%s/%s.png' % (opt.dataset_name, batches_done), nrow=5, normalize=False)
 
 # ----------
@@ -120,10 +120,10 @@ for epoch in range(opt.epoch, opt.n_epochs):
 
         # Model inputs
         real_D = Variable(batch['B'].type(Tensor)) # depth
-        real_B = Variable(batch['A'].type(Tensor)) # cnt
+        real_B = Variable(batch['A'].type(Tensor)) # mask
         real_C = Variable(batch['C'].type(Tensor)) # rgb
-        # real_A = torch.cat((real_D, real_C), 1)
-        real_A = real_D
+        real_A = torch.cat((real_D, real_C), 1)
+        # real_A = real_D
         # print('===========')
         # print(real_D.shape, real_B.shape, real_C.shape, real_A.shape)
 
@@ -143,27 +143,6 @@ for epoch in range(opt.epoch, opt.n_epochs):
         loss_GAN = criterion_GAN(pred_fake, valid)
         # Pixel-wise loss
         loss_pixel = criterion_pixelwise(fake_B, real_B)
-
-        # fake_B_diff = []
-        # real_A_diff = []
-        # for n in range(1,255, 3):
-        #     for m in range(1,255, 3):
-        #         for c in range(3):
-        #             diff_f = 0
-        #             diff_r = 0
-        #             if fake_B[0][c][m+1][n+0] != fake_B[0][c][m][n]:
-        #                 diff_f = diff_f + 1
-        #             if fake_B[0][c][m+0][n+1] != fake_B[0][c][m][n]:
-        #                 diff_f = diff_f + 1
-        #             if fake_B[0][c][m-1][n+0] != fake_B[0][c][m][n]:
-        #                 diff_f = diff_f + 1
-        #             if fake_B[0][c][m+0][n-1] != fake_B[0][c][m][n]:
-        #                 diff_f = diff_f + 1
-        #             fake_B_diff.append(diff_f)
-        #             real_A_diff.append(diff_r)
-        # fake_B_diff = torch.FloatTensor(fake_B_diff)
-        # real_A_diff = torch.FloatTensor(real_A_diff)
-        # loss_pixel = criterion_pixelwise(fake_B_diff, real_A_diff)
 
         # Total loss
         loss_G = loss_GAN + lambda_pixel * loss_pixel
